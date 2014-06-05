@@ -1,0 +1,490 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>事务的多线程调度 | denglf&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="denglf">
+    
+    <meta name="description" content="最近一直在忙数据库驱动的改造，系统是erlang开发，数据库是mysql。之前的数据库驱动一直是用的erlyweb的erlydb，基于MVC模式，整个Model层由erlydb封装，用起来十分方便。">
+    
+    
+    
+    
+    <link rel="alternative" href="/atom.xml" title="denglf&#39;s Blog" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/author.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/author.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="denglf&#39;s Blog" title="denglf&#39;s Blog"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="denglf&#39;s Blog">denglf&#39;s Blog</a></h1>
+				<h2 class="blog-motto">见之不若知之，知之不若行之</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">文章</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/about">关于</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" autocomplete="off" name="q" maxlength="20" placeholder="Search" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2009-12-30-multithread-scheduling-transaction/" title="事务的多线程调度" itemprop="url">事务的多线程调度</a>
+  </h1>
+  <p class="article-author">By
+      <a href="http://denglf.com/about" title="denglf" target="_blank">denglf</a>
+  <p class="article-time">
+    <time datetime="2009-12-30T00:00:00.000Z" itemprop="datePublished">发表于12月 30 2009</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目录</strong>
+		
+			
+		
+		</div>
+		
+		<p>最近一直在忙数据库驱动的改造，系统是erlang开发，数据库是mysql。之前的数据库驱动一直是用的erlyweb的erlydb，基于MVC模式，整个Model层由erlydb封装，用起来十分方便。<br><a id="more"></a><br>erlydb连接数据库是基于tcp的实现，中间又有大量拼装字符串的操作，这样的io和字符串操作恰恰是erlang低效的部分。所以性能是erlydb最大的问题。在高并发的erlang系统中，这样的数据库操作就成为了瓶颈。</p>
+<p>所幸erlang支持内联驱动，用C处理数据库连接和字符串拼接操作就高效的多。在这里直接由C调用mysql的API，当然C driver是以多线程实现和异步返回数据的。<br><img src="/images/2009-12-30-multithread-scheduling-transaction/Capture.PNG" alt=""></p>
+<p>线程在sql队列中取sql指令，然后在连接池中取连接，执行完sql语句就将结果异步返回。在对数据库的基本操作中，事务是比较麻烦的一个。因为一个事务只能在同一个连接中操作，而线程不管你的sql是不是事务里的，只负责取连接执行。所以要保证同一个事务使用同一个连接就必须有一个门牌号，也就是连接id来维系。事务begin的时候，将获得的连接id传回给erlang，并锁住连接，然后事务中的sql操作发送命令给驱动的时候带上连接id作为参数，线程取到这个sql命令的时候发现有连接的id，就根据id直接去取这个连接，直到事务提交或回滚的时候去掉连接的锁定，这样其它的sql就能使用这个连接了。</p>
+<p>erlang事务的代码如下：</p>
+<figure class="highlight erlang"><pre><span class="function"><span class="title">transaction</span><span class="params">(<span class="variable">Fun</span>)</span> -&gt;</span>
+    <span class="keyword">case</span> <span class="function_name">command</span>(?<span class="variable">DRV_BEGIN</span>, <span class="string">"BEGIN"</span>) <span class="keyword">of</span>
+        <span class="tuple">{error, <span class="variable">_</span>}</span> = <span class="variable">Err</span> -&gt;
+            <span class="tuple">{aborted, <span class="variable">Err</span>}</span>;
+        <span class="tuple">{ok, <span class="variable">Conn</span>}</span> -&gt;
+            <span class="keyword">case</span> <span class="keyword">catch</span> <span class="variable">Fun</span>(<span class="variable">Conn</span>) <span class="keyword">of</span>
+                error = <span class="variable">Err</span> -&gt; <span class="function_name">rollback</span>(<span class="variable">Conn</span>, <span class="variable">Err</span>);
+                <span class="tuple">{error, <span class="variable">_</span>}</span> = <span class="variable">Err</span> -&gt; <span class="function_name">rollback</span>(<span class="variable">Conn</span>, <span class="variable">Err</span>);
+                <span class="tuple">{'<span class="variable">EXIT</span>', <span class="variable">_</span>}</span> = <span class="variable">Err</span> -&gt; <span class="function_name">rollback</span>(<span class="variable">Conn</span>, <span class="variable">Err</span>);
+            <span class="variable">Res</span> -&gt;
+                <span class="keyword">case</span> <span class="function_name">command</span>(?<span class="variable">DRV_COMMIT</span>, <span class="variable">Conn</span>) <span class="keyword">of</span>
+                    <span class="tuple">{error, <span class="variable">_</span>}</span> = <span class="variable">Err</span> -&gt;
+                        <span class="function_name">rollback</span>(<span class="variable">Conn</span>, <span class="tuple">{commit_error, <span class="variable">Err</span>}</span>);
+                    <span class="variable">_</span> -&gt;
+                        <span class="keyword">case</span> <span class="variable">Res</span> <span class="keyword">of</span>
+                            <span class="tuple">{atomic, <span class="variable">_</span>}</span> -&gt; <span class="variable">Res</span>;
+                            <span class="variable">_</span> -&gt; <span class="tuple">{atomic, <span class="variable">Res</span>}</span>
+                        <span class="keyword">end</span>
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+    <span class="keyword">end</span>.
+
+<span class="function"><span class="title">transaction_fun</span><span class="params">(<span class="variable">Conn</span>)</span> -&gt;</span>
+    <span class="function_name">io:format</span>(<span class="string">"execute = ~p~n"</span>,
+    [<span class="function_name">execute</span>(<span class="string">"insert into user (name, age) values('transaction', 23)"</span>, <span class="variable">Conn</span>)]),
+    <span class="function_name">io:format</span>(<span class="string">"execute = ~p~n"</span>,
+    [<span class="function_name">execute</span>(<span class="string">"update user set age=100 where name='transaction cc'"</span>, <span class="variable">Conn</span>)]),
+    <span class="function_name">io:format</span>(<span class="string">"execute = ~p~n"</span>,
+    [<span class="function_name">execute</span>(<span class="string">"insert into user (id, age) values(1, 20)"</span>, <span class="variable">Conn</span>)]).
+
+<span class="function"><span class="title">test_transaction</span><span class="params">()</span> -&gt;</span>
+    <span class="function_name">transaction</span>(fun transaction_fun/1).
+</pre></figure>
+
+
+<p>现在的线程调度就变成：<br><img src="/images/2009-12-30-multithread-scheduling-transaction/Capture1.PNG" alt=""></p>
+<p>这样就解决的了死锁的问题，又大大提高了效率。</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/Erlang/">Erlang</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Erlang/">Erlang</a><a href="/tags/Mysql/">Mysql</a><a href="/tags/事务/">事务</a><a href="/tags/多线程/">多线程</a>
+  </div>
+
+
+
+
+<div class="article-share" id="share">
+
+  <div data-url="http://denglf.com/2009-12-30-multithread-scheduling-transaction/" data-title="事务的多线程调度 | denglf&#39;s Blog" data-tsina="1700030707" class="share clearfix">
+  </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2010-01-06-about-memory-leaks/" title="关于内存泄漏">
+  <strong>上一篇：</strong><br/>
+  <span>
+  关于内存泄漏</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2009-12-29-celebrate-the-opening-of-my-blog/"  title="庆祝我的博客开通了">
+ <strong>下一篇：</strong><br/> 
+ <span>庆祝我的博客开通了
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section class="comment">
+	<!-- 多说评论框 start -->
+    <div class="ds-thread" data-thread-key="2009-12-30-multithread-scheduling-transaction/" data-title="事务的多线程调度"></div>
+    <!-- 多说评论框 end -->
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ 
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+			<li><a href="/categories/Apache/" title="Apache">Apache (1)</a></li>
+		
+			<li><a href="/categories/C++/" title="C++">C++ (1)</a></li>
+		
+			<li><a href="/categories/DataStruct/" title="DataStruct">DataStruct (1)</a></li>
+		
+			<li><a href="/categories/Erlang/" title="Erlang">Erlang (1)</a></li>
+		
+			<li><a href="/categories/Git/" title="Git">Git (1)</a></li>
+		
+			<li><a href="/categories/Image/" title="Image">Image (1)</a></li>
+		
+			<li><a href="/categories/Life/" title="Life">Life (4)</a></li>
+		
+			<li><a href="/categories/Mac/" title="Mac">Mac (1)</a></li>
+		
+			<li><a href="/categories/Math/" title="Math">Math (1)</a></li>
+		
+			<li><a href="/categories/Mysql/" title="Mysql">Mysql (4)</a></li>
+		
+			<li><a href="/categories/Song/" title="Song">Song (1)</a></li>
+		
+			<li><a href="/categories/Sqlite/" title="Sqlite">Sqlite (1)</a></li>
+		
+			<li><a href="/categories/Themes/" title="Themes">Themes (1)</a></li>
+		
+			<li><a href="/categories/Trac/" title="Trac">Trac (1)</a></li>
+		
+			<li><a href="/categories/WordPress/" title="WordPress">WordPress (1)</a></li>
+		
+		</ul>
+</div>
+
+
+
+  
+  <div class="tagcloudlist">
+    <p class="asidetitle">标签云</p>
+    <div class="tagcloudlist clearfix">
+       <a href="/tags/BlogEngine/" style="font-size: 10.00px;">BlogEngine</a><a href="/tags/C++/" style="font-size: 10.00px;">C++</a><a href="/tags/Erlang/" style="font-size: 10.00px;">Erlang</a><a href="/tags/Image/" style="font-size: 10.00px;">Image</a><a href="/tags/Mysql/" style="font-size: 20.00px;">Mysql</a><a href="/tags/SMTP/" style="font-size: 10.00px;">SMTP</a><a href="/tags/Segmentation faults/" style="font-size: 10.00px;">Segmentation faults</a><a href="/tags/Trac/" style="font-size: 10.00px;">Trac</a><a href="/tags/WordPress/" style="font-size: 10.00px;">WordPress</a><a href="/tags/apache/" style="font-size: 10.00px;">apache</a><a href="/tags/blog/" style="font-size: 15.00px;">blog</a><a href="/tags/c/" style="font-size: 10.00px;">c</a><a href="/tags/c++/" style="font-size: 10.00px;">c++</a><a href="/tags/clock/" style="font-size: 10.00px;">clock</a><a href="/tags/connection id/" style="font-size: 10.00px;">connection id</a><a href="/tags/email/" style="font-size: 10.00px;">email</a><a href="/tags/finder/" style="font-size: 10.00px;">finder</a><a href="/tags/homebrew/" style="font-size: 10.00px;">homebrew</a><a href="/tags/html/" style="font-size: 10.00px;">html</a><a href="/tags/ico/" style="font-size: 10.00px;">ico</a><a href="/tags/index/" style="font-size: 10.00px;">index</a><a href="/tags/ldap/" style="font-size: 10.00px;">ldap</a><a href="/tags/mac/" style="font-size: 10.00px;">mac</a><a href="/tags/math/" style="font-size: 10.00px;">math</a><a href="/tags/mogrify/" style="font-size: 10.00px;">mogrify</a><a href="/tags/my little airport/" style="font-size: 10.00px;">my little airport</a><a href="/tags/mysql cluster/" style="font-size: 10.00px;">mysql cluster</a><a href="/tags/prepare statement/" style="font-size: 10.00px;">prepare statement</a><a href="/tags/song/" style="font-size: 10.00px;">song</a><a href="/tags/sqlite/" style="font-size: 10.00px;">sqlite</a><a href="/tags/svg/" style="font-size: 10.00px;">svg</a><a href="/tags/事务/" style="font-size: 10.00px;">事务</a><a href="/tags/内存泄漏/" style="font-size: 10.00px;">内存泄漏</a><a href="/tags/图论/" style="font-size: 10.00px;">图论</a><a href="/tags/多线程/" style="font-size: 10.00px;">多线程</a><a href="/tags/星月神话/" style="font-size: 10.00px;">星月神话</a><a href="/tags/算法/" style="font-size: 10.00px;">算法</a><a href="/tags/触发器/" style="font-size: 10.00px;">触发器</a>
+    </div>
+  </div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">文章</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/05">五月 2014</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/02">二月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/09">九月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/07">七月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/06">六月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/04">四月 2010</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/03">三月 2010</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/02">二月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/01">一月 2010</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2009/12">十二月 2009</a><span class="archive-list-count">2</span></li></ul>
+  </div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+      <li><a href="http://www.hongzheng.me" target="_blank" title="Hongzheng's blog">Hongzheng's blog</a></li>
+    </ul>
+</div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		
+		<a href="http://weibo.com/dlfen" target="_blank"><div class="author"></div></a>
+		
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello, I am a software engineer in Beijing. <br/>
+			I&#39;ll share my experience with you at this blog.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/dlfen" target="_blank" class="icon-weibo" title="weibo"></a>
+		
+		
+		<a href="https://github.com/denglf" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		<a href="https://www.douban.com/people/dlfen" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		
+		<a href="mailto:denglifen@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://zespia.tw/hexo/" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Pacman">Jacman</a> © 2014 
+		
+		<a href="http://denglf.com/about" target="_blank" title="denglf">denglf</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize();
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+      
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://s.jiathis.com/qrcode.php?url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});
+</script>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"dlfblog"};
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+});
+</script>
+
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-12609574-2', 'denglf.com');  
+ga('send', 'pageview');
+</script>
+
+
+<div id="totop">
+<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+</div>
+
+<script src="/js/totop.js"></script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+  </body>
+</html>
