@@ -87,7 +87,7 @@
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">文章目录</strong>
 		
-			<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#LDAP_MacOSX_安装"><span class="toc-number">1.</span> <span class="toc-text">LDAP MacOSX 安装</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Berkeley_DB"><span class="toc-number">1.1.</span> <span class="toc-text">安装Berkeley DB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安装LDAP"><span class="toc-number">1.2.</span> <span class="toc-text">安装LDAP</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#修改LDAP的安装脚本"><span class="toc-number">1.2.1.</span> <span class="toc-text">修改LDAP的安装脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装openldap"><span class="toc-number">1.2.2.</span> <span class="toc-text">安装openldap</span></a></li></ol><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Apache服务httpd"><span class="toc-number">1.3.</span> <span class="toc-text">安装Apache服务httpd</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#修改httpd安装脚本"><span class="toc-number">1.3.1.</span> <span class="toc-text">修改httpd安装脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装httpd"><span class="toc-number">1.3.2.</span> <span class="toc-text">安装httpd</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置httpd"><span class="toc-number">1.3.3.</span> <span class="toc-text">配置httpd</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#运行httpd"><span class="toc-number">1.3.4.</span> <span class="toc-text">运行httpd</span></a></li></ol>
+			<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#LDAP_MacOSX_安装"><span class="toc-number">1.</span> <span class="toc-text">LDAP MacOSX 安装</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Berkeley_DB"><span class="toc-number">1.1.</span> <span class="toc-text">安装Berkeley DB</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#安装openldap"><span class="toc-number">1.1.1.</span> <span class="toc-text">安装openldap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装httpd"><span class="toc-number">1.1.2.</span> <span class="toc-text">安装httpd</span></a></li></ol>
 		
 		</div>
 		
@@ -96,90 +96,40 @@
 <p>使用Homebrew安装OpenLDAP，首先安装数据库berkeley-db。</p>
 <h3 id="安装Berkeley_DB">安装Berkeley DB</h3>
 <figure class="highlight sh"><pre>$ brew install berkeley<span class="attribute">-db</span> <span class="subst">--</span>enable<span class="attribute">-sql</span>
+</pre></figure><br>### 安装LDAP<br><br>#### 修改LDAP的安装脚本<br>我的LDAP的用户数据是从<code>.htpasswd</code>文件中导入的，里面的密码是crypt加密的。<br><br>所以LDAP需要启用crypt。<br><br><figure class="highlight sh"><pre>brew <span class="keyword">edit</span> openldap
 </pre></figure>
-
-
-<h3 id="安装LDAP">安装LDAP</h3>
-<h4 id="修改LDAP的安装脚本">修改LDAP的安装脚本</h4>
-<p>我的LDAP的用户数据是从<code>.htpasswd</code>文件中导入的，里面的密码是crypt加密的。</p>
-<p>所以LDAP需要启用crypt。</p>
-<figure class="highlight sh"><pre>brew <span class="keyword">edit</span> openldap
-</pre></figure>
-
 
 <p>在<code>args</code>的列表中加上下面的选项：</p>
 <figure class="highlight sh"><pre><span class="literal">-</span><span class="literal">-</span><span class="comment">enable</span><span class="literal">-</span><span class="comment">crypt</span>
 </pre></figure>
 
-
 <h4 id="安装openldap">安装openldap</h4>
 <figure class="highlight sh"><pre>$ brew install openldap <span class="subst">--</span><span class="keyword">with</span><span class="attribute">-berkeley</span><span class="attribute">-db</span>
-</pre></figure>
-
-
-<h3 id="安装Apache服务httpd">安装Apache服务httpd</h3>
-<p>自带的Apache没有编译LDAP模块，需要重新编译一个。</p>
-<p>还是使用Homebrew安装，默认的安装也不编译LDAP，所以我们需要修改安装脚本。</p>
-<h4 id="修改httpd安装脚本">修改httpd安装脚本</h4>
-<figure class="highlight sh"><pre><span class="variable">$ </span>brew edit httpd
-</pre></figure>
-
-
-<p>在<code>./configure</code>的后面加上下面的选项：</p>
-<figure class="highlight ruby"><pre><span class="string">"--enable-ldap"</span>,
+</pre></figure><br>### 安装Apache服务httpd<br>自带的Apache没有编译LDAP模块，需要重新编译一个。<br><br>还是使用Homebrew安装，默认的安装也不编译LDAP，所以我们需要修改安装脚本。<br><br>#### 修改httpd安装脚本<br><br><figure class="highlight sh"><pre><span class="variable">$ </span>brew edit httpd
+</pre></figure><br>在<code>./configure</code>的后面加上下面的选项：<br><br><figure class="highlight ruby"><pre><span class="string">"--enable-ldap"</span>,
 <span class="string">"--enable-authnz-ldap"</span>,
 <span class="string">"--with-ldap"</span>,
 <span class="string">"--with-ldap-sdk=openldap"</span>
 </pre></figure>
 
-
 <p>由于安装的httpd版本是<code>2.7&gt;2.0</code>，ldap模块由<code>mod_auth_ldap</code>改成了<code>mod_authnz_ldap</code>。需要加入选项<code>--enable-authnz-ldap</code>，而这个选项依赖<code>mod_ldap</code>，因此需要加入<code>--enable-ldap</code>，httpd的编译使用代码内部的<code>apr</code>和<code>apr-util</code>，<code>apr-util</code>也需要加入ldap的选项，因此加上<code>--with-ldap</code>。</p>
 <h4 id="安装httpd">安装httpd</h4>
 <figure class="highlight sh"><pre><span class="variable">$ </span>brew install httpd
-</pre></figure>
-
-
-<p>如果出现一些错误信息：</p>
-<figure class="highlight"><pre><span class="attribute">env</span>: <span class="string">/Applications/Xcode.app/Contents/Developer/Toolchains/OSX10.9.</span>
+</pre></figure><br>如果出现一些错误信息：<br><br><figure class="highlight"><pre><span class="attribute">env</span>: <span class="string">/Applications/Xcode.app/Contents/Developer/Toolchains/OSX10.9.</span>
 <span class="attribute">xctoolchain/usr/bin/cc</span>: <span class="string">No such file or directory</span>
 </pre></figure>
 
-
 <p>那么执行下面的代码，并重新安装。</p>
 <figure class="highlight"><pre>sudo ln -s /Applications/Xcode<span class="preprocessor">.app</span>/Contents/Developer/Toolchains/XcodeDefault<span class="preprocessor">.xctoolchain</span>/ /Applications/Xcode<span class="preprocessor">.app</span>/Contents/Developer/Toolchains/OSX10<span class="number">.9</span><span class="preprocessor">.xctoolchain</span>
-</pre></figure>
-
-
-<h4 id="配置httpd">配置httpd</h4>
-<p>安装完成后，在httpd.conf中配置<code>mod_authnz.ldap</code>，加入：</p>
-<figure class="highlight sh"><pre>LoadModule ldap_module libexec/mod_ldap<span class="preprocessor">.so</span>
+</pre></figure><br>#### 配置httpd<br>安装完成后，在httpd.conf中配置<code>mod_authnz.ldap</code>，加入：<br><br><figure class="highlight sh"><pre>LoadModule ldap_module libexec/mod_ldap<span class="preprocessor">.so</span>
 LoadModule authnz_ldap_module libexec/mod_authnz_ldap<span class="preprocessor">.so</span>
-</pre></figure>
-
-
-<h4 id="运行httpd">运行httpd</h4>
-<figure class="highlight sh"><pre><span class="variable">$ </span>apachectl start
-</pre></figure>
-
-
-<p>如果出现以下错误：</p>
-<figure class="highlight"><pre>httpd: Could <span class="keyword">not</span> reliably determine the server<span class="comment">'s fully qualified domain name, </span>
+</pre></figure><br>#### 运行httpd<br><figure class="highlight sh"><pre><span class="variable">$ </span>apachectl start
+</pre></figure><br>如果出现以下错误：<br><br><figure class="highlight"><pre>httpd: Could <span class="keyword">not</span> reliably determine the server<span class="comment">'s fully qualified domain name, </span>
 <span class="keyword">using</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> <span class="keyword">for</span> ServerName
-</pre></figure>
-
-
-<p>说明<code>httpd.conf</code>中的ServerName没有配置，去掉ServerName的注释并修改端口即可，需要和listen的端口一致：</p>
-<figure class="highlight"><pre><span class="keyword"><span class="common">Listen</span></span> 8080
+</pre></figure><br>说明<code>httpd.conf</code>中的ServerName没有配置，去掉ServerName的注释并修改端口即可，需要和listen的端口一致：<br><br><figure class="highlight"><pre><span class="keyword"><span class="common">Listen</span></span> 8080
 <span class="keyword"><span class="common">ServerName</span></span> localhost:8080
+</pre></figure><br>由于80端口需要使用sudo启动，这里使用了8080。<br><br>重新启动httpd：<br><br><figure class="highlight"><pre><span class="variable">$ </span>apachectl restart
 </pre></figure>
-
-
-<p>由于80端口需要使用sudo启动，这里使用了8080。</p>
-<p>重新启动httpd：</p>
-<figure class="highlight"><pre><span class="variable">$ </span>apachectl restart
-</pre></figure>
-
-
   
 	</div>
 		<footer class="article-footer clearfix">
@@ -242,7 +192,7 @@ LoadModule authnz_ldap_module libexec/mod_authnz_ldap<span class="preprocessor">
   <div id="toc" class="toc-aside">
   <strong class="toc-title">文章目录</strong>
  
- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#LDAP_MacOSX_安装"><span class="toc-number">1.</span> <span class="toc-text">LDAP MacOSX 安装</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Berkeley_DB"><span class="toc-number">1.1.</span> <span class="toc-text">安装Berkeley DB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安装LDAP"><span class="toc-number">1.2.</span> <span class="toc-text">安装LDAP</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#修改LDAP的安装脚本"><span class="toc-number">1.2.1.</span> <span class="toc-text">修改LDAP的安装脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装openldap"><span class="toc-number">1.2.2.</span> <span class="toc-text">安装openldap</span></a></li></ol><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Apache服务httpd"><span class="toc-number">1.3.</span> <span class="toc-text">安装Apache服务httpd</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#修改httpd安装脚本"><span class="toc-number">1.3.1.</span> <span class="toc-text">修改httpd安装脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装httpd"><span class="toc-number">1.3.2.</span> <span class="toc-text">安装httpd</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置httpd"><span class="toc-number">1.3.3.</span> <span class="toc-text">配置httpd</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#运行httpd"><span class="toc-number">1.3.4.</span> <span class="toc-text">运行httpd</span></a></li></ol>
+ <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#LDAP_MacOSX_安装"><span class="toc-number">1.</span> <span class="toc-text">LDAP MacOSX 安装</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Berkeley_DB"><span class="toc-number">1.1.</span> <span class="toc-text">安装Berkeley DB</span></a></li><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#安装openldap"><span class="toc-number">1.1.1.</span> <span class="toc-text">安装openldap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安装httpd"><span class="toc-number">1.1.2.</span> <span class="toc-text">安装httpd</span></a></li></ol>
  
   </div>
 
@@ -267,7 +217,7 @@ LoadModule authnz_ldap_module libexec/mod_authnz_ldap<span class="preprocessor">
 		
 			<li><a href="/categories/Image/" title="Image">Image (1)</a></li>
 		
-			<li><a href="/categories/Life/" title="Life">Life (4)</a></li>
+			<li><a href="/categories/Life/" title="Life">Life (5)</a></li>
 		
 			<li><a href="/categories/Mac/" title="Mac">Mac (1)</a></li>
 		
@@ -294,7 +244,7 @@ LoadModule authnz_ldap_module libexec/mod_authnz_ldap<span class="preprocessor">
   <div class="tagcloudlist">
     <p class="asidetitle">标签云</p>
     <div class="tagcloudlist clearfix">
-       <a href="/tags/BlogEngine/" style="font-size: 10.00px;">BlogEngine</a><a href="/tags/C++/" style="font-size: 10.00px;">C++</a><a href="/tags/Erlang/" style="font-size: 10.00px;">Erlang</a><a href="/tags/Image/" style="font-size: 10.00px;">Image</a><a href="/tags/Mysql/" style="font-size: 20.00px;">Mysql</a><a href="/tags/SMTP/" style="font-size: 10.00px;">SMTP</a><a href="/tags/Segmentation faults/" style="font-size: 10.00px;">Segmentation faults</a><a href="/tags/Trac/" style="font-size: 10.00px;">Trac</a><a href="/tags/WordPress/" style="font-size: 10.00px;">WordPress</a><a href="/tags/apache/" style="font-size: 10.00px;">apache</a><a href="/tags/blog/" style="font-size: 15.00px;">blog</a><a href="/tags/c/" style="font-size: 10.00px;">c</a><a href="/tags/c++/" style="font-size: 10.00px;">c++</a><a href="/tags/clock/" style="font-size: 10.00px;">clock</a><a href="/tags/connection id/" style="font-size: 10.00px;">connection id</a><a href="/tags/email/" style="font-size: 10.00px;">email</a><a href="/tags/finder/" style="font-size: 10.00px;">finder</a><a href="/tags/homebrew/" style="font-size: 10.00px;">homebrew</a><a href="/tags/html/" style="font-size: 10.00px;">html</a><a href="/tags/ico/" style="font-size: 10.00px;">ico</a><a href="/tags/index/" style="font-size: 10.00px;">index</a><a href="/tags/ldap/" style="font-size: 10.00px;">ldap</a><a href="/tags/mac/" style="font-size: 10.00px;">mac</a><a href="/tags/math/" style="font-size: 10.00px;">math</a><a href="/tags/mogrify/" style="font-size: 10.00px;">mogrify</a><a href="/tags/my little airport/" style="font-size: 10.00px;">my little airport</a><a href="/tags/mysql cluster/" style="font-size: 10.00px;">mysql cluster</a><a href="/tags/prepare statement/" style="font-size: 10.00px;">prepare statement</a><a href="/tags/song/" style="font-size: 10.00px;">song</a><a href="/tags/sqlite/" style="font-size: 10.00px;">sqlite</a><a href="/tags/svg/" style="font-size: 10.00px;">svg</a><a href="/tags/事务/" style="font-size: 10.00px;">事务</a><a href="/tags/内存泄漏/" style="font-size: 10.00px;">内存泄漏</a><a href="/tags/图论/" style="font-size: 10.00px;">图论</a><a href="/tags/多线程/" style="font-size: 10.00px;">多线程</a><a href="/tags/星月神话/" style="font-size: 10.00px;">星月神话</a><a href="/tags/算法/" style="font-size: 10.00px;">算法</a><a href="/tags/触发器/" style="font-size: 10.00px;">触发器</a>
+       <a href="/tags/BlogEngine/" style="font-size: 10.00px;">BlogEngine</a><a href="/tags/C++/" style="font-size: 10.00px;">C++</a><a href="/tags/Erlang/" style="font-size: 10.00px;">Erlang</a><a href="/tags/Image/" style="font-size: 10.00px;">Image</a><a href="/tags/Mysql/" style="font-size: 20.00px;">Mysql</a><a href="/tags/SMTP/" style="font-size: 10.00px;">SMTP</a><a href="/tags/Segmentation-faults/" style="font-size: 10.00px;">Segmentation faults</a><a href="/tags/Trac/" style="font-size: 10.00px;">Trac</a><a href="/tags/WordPress/" style="font-size: 10.00px;">WordPress</a><a href="/tags/apache/" style="font-size: 10.00px;">apache</a><a href="/tags/blog/" style="font-size: 15.00px;">blog</a><a href="/tags/c/" style="font-size: 10.00px;">c</a><a href="/tags/c++/" style="font-size: 10.00px;">c++</a><a href="/tags/clock/" style="font-size: 10.00px;">clock</a><a href="/tags/connection-id/" style="font-size: 10.00px;">connection id</a><a href="/tags/email/" style="font-size: 10.00px;">email</a><a href="/tags/finder/" style="font-size: 10.00px;">finder</a><a href="/tags/homebrew/" style="font-size: 10.00px;">homebrew</a><a href="/tags/html/" style="font-size: 10.00px;">html</a><a href="/tags/ico/" style="font-size: 10.00px;">ico</a><a href="/tags/index/" style="font-size: 10.00px;">index</a><a href="/tags/iphone/" style="font-size: 10.00px;">iphone</a><a href="/tags/ldap/" style="font-size: 10.00px;">ldap</a><a href="/tags/mac/" style="font-size: 10.00px;">mac</a><a href="/tags/math/" style="font-size: 10.00px;">math</a><a href="/tags/mogrify/" style="font-size: 10.00px;">mogrify</a><a href="/tags/my-little-airport/" style="font-size: 10.00px;">my little airport</a><a href="/tags/mysql-cluster/" style="font-size: 10.00px;">mysql cluster</a><a href="/tags/prepare-statement/" style="font-size: 10.00px;">prepare statement</a><a href="/tags/song/" style="font-size: 10.00px;">song</a><a href="/tags/sqlite/" style="font-size: 10.00px;">sqlite</a><a href="/tags/svg/" style="font-size: 10.00px;">svg</a><a href="/tags/事务/" style="font-size: 10.00px;">事务</a><a href="/tags/内存泄漏/" style="font-size: 10.00px;">内存泄漏</a><a href="/tags/图论/" style="font-size: 10.00px;">图论</a><a href="/tags/多线程/" style="font-size: 10.00px;">多线程</a><a href="/tags/星月神话/" style="font-size: 10.00px;">星月神话</a><a href="/tags/算法/" style="font-size: 10.00px;">算法</a><a href="/tags/触发器/" style="font-size: 10.00px;">触发器</a>
     </div>
   </div>
 
@@ -302,7 +252,7 @@ LoadModule authnz_ldap_module libexec/mod_authnz_ldap<span class="preprocessor">
   
   <div class="archiveslist">
     <p class="asidetitle"><a href="/archives">文章</a></p>
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/05">五月 2014</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/02">二月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/09">九月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/07">七月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/06">六月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/04">四月 2010</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/03">三月 2010</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/02">二月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/01">一月 2010</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2009/12">十二月 2009</a><span class="archive-list-count">2</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/06">六月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/05">五月 2014</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/02">二月 2014</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/09">九月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/07">七月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/06">六月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/04">四月 2010</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/03">三月 2010</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/02">二月 2010</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2010/01">一月 2010</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2009/12">十二月 2009</a><span class="archive-list-count">2</span></li></ul>
   </div>
 
 
