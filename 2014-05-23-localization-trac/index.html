@@ -18,8 +18,9 @@ python自带包管理工具easy_install或pip。
 python的包管理工具，比easy_install好用点，安装过的可以略过。
 $ sudo easy_install pip
 
+
 安装Genshi
-Genshi是一个解">
+Genshi是一个">
     
     
     
@@ -97,7 +98,7 @@ Genshi是一个解">
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">文章目录</strong>
 		
-			<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#环境"><span class="toc-number">1.</span> <span class="toc-text">环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装pip"><span class="toc-number">2.</span> <span class="toc-text">安装pip</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Genshi"><span class="toc-number">3.</span> <span class="toc-text">安装Genshi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Trac"><span class="toc-number">4.</span> <span class="toc-text">安装Trac</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Babel"><span class="toc-number">5.</span> <span class="toc-text">安装Babel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#本地化设置"><span class="toc-number">6.</span> <span class="toc-text">本地化设置</span></a></li></ol>
+			<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#环境"><span class="toc-number">1.</span> <span class="toc-text">环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装pip"><span class="toc-number">2.</span> <span class="toc-text">安装pip</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Genshi"><span class="toc-number">3.</span> <span class="toc-text">安装Genshi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Babel"><span class="toc-number">4.</span> <span class="toc-text">安装Babel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Trac"><span class="toc-number">5.</span> <span class="toc-text">安装Trac</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#本地化设置"><span class="toc-number">6.</span> <span class="toc-text">本地化设置</span></a></li></ol>
 		
 		</div>
 		
@@ -108,22 +109,25 @@ Genshi是一个解">
 </ul>
 <h2 id="安装pip">安装pip</h2>
 <p>python的包管理工具，比easy_install好用点，安装过的可以略过。</p>
-<p><figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> easy_install pip
-</pre></figure></p>
+<figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> easy_install pip
+</pre></figure>
+
 <h2 id="安装Genshi">安装Genshi</h2>
 <p>Genshi是一个解析HTML和XML的python库。</p>
-<p><figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install Genshi
-</pre></figure></p>
-<h2 id="安装Trac">安装Trac</h2>
-<p><figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install trac
-</pre></figure></p>
+<figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install Genshi
+</pre></figure>
+
 <h2 id="安装Babel">安装Babel</h2>
 <p>Babel是一个本地化翻译的python库。</p>
-<p><figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install -v Babel==<span class="number">0.9</span>.<span class="number">6</span>
-</pre></figure><br><strong>注意：这里安装的版本是<code>0.9.6</code>。</strong></p>
-<p>Babel的默认安装版本是<code>1.3</code>，可惜这个版本和<code>Trac 1.0.1</code>不兼容。会出现一下错误：</p>
-<p><figure class="highlight"><pre>AttributeError: NullTranslationsBabel instance has no <span class="built_in">attribute</span> <span class="string">'isactive'</span>
-</pre></figure><br>见官方<a href="http://trac.edgewall.org/ticket/11345" target="_blank" rel="external">ticket</a>。</p>
+<figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install -v Babel==<span class="number">0.9</span>.<span class="number">6</span>
+</pre></figure><br><strong>注意：这里安装的版本是<code>0.9.6</code>。</strong><br>Babel的默认安装版本是<code>1.3</code>，可惜这个版本和<code>Trac 1.0.1</code>不兼容。会出现一下错误：<br><figure class="highlight"><pre>AttributeError: NullTranslationsBabel instance has no <span class="built_in">attribute</span> <span class="string">'isactive'</span>
+</pre></figure>
+
+<p>见官方<a href="http://trac.edgewall.org/ticket/11345" target="_blank" rel="external">ticket</a>。</p>
+<h2 id="安装Trac">安装Trac</h2>
+<figure class="highlight sh"><pre>$ <span class="built_in">sudo</span> pip install trac
+</pre></figure>
+
 <h2 id="本地化设置">本地化设置</h2>
 <p>在<code>httpd.conf</code>中设置使用的语言：</p>
 <p><figure class="highlight ini"><pre>&lt;Location /trac&gt;
@@ -198,7 +202,7 @@ SetEnv trac.locale zh_CN.UTF-8
   <div id="toc" class="toc-aside">
   <strong class="toc-title">文章目录</strong>
  
- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#环境"><span class="toc-number">1.</span> <span class="toc-text">环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装pip"><span class="toc-number">2.</span> <span class="toc-text">安装pip</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Genshi"><span class="toc-number">3.</span> <span class="toc-text">安装Genshi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Trac"><span class="toc-number">4.</span> <span class="toc-text">安装Trac</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Babel"><span class="toc-number">5.</span> <span class="toc-text">安装Babel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#本地化设置"><span class="toc-number">6.</span> <span class="toc-text">本地化设置</span></a></li></ol>
+ <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#环境"><span class="toc-number">1.</span> <span class="toc-text">环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装pip"><span class="toc-number">2.</span> <span class="toc-text">安装pip</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Genshi"><span class="toc-number">3.</span> <span class="toc-text">安装Genshi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Babel"><span class="toc-number">4.</span> <span class="toc-text">安装Babel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装Trac"><span class="toc-number">5.</span> <span class="toc-text">安装Trac</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#本地化设置"><span class="toc-number">6.</span> <span class="toc-text">本地化设置</span></a></li></ol>
  
   </div>
 
