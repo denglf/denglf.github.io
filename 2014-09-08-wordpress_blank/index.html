@@ -4,12 +4,18 @@
 <head>
   <meta charset="UTF-8">
   
-    <title>很有爱的钟 | denglf&#39;s Blog</title>
+    <title>wordpress页面空白 | denglf&#39;s Blog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
     
     <meta name="author" content="denglf">
     
-    <meta name="description" content="偶然发现了这张图片，很有爱的钟，具有代表性的式子，大家能认出几个呢？（图下附有解说）">
+    <meta name="description" content="升级了wordpress后页面经常空白，有点莫名其妙，后来找到了原因。
+原来是php的内存超过限制。
+解决方法如下：
+编辑php.ini
+memory_limit=16M
+将这个值改大点，例如256M，重启Apache。
+然后刷新，页面终于出来了。">
     
     
     
@@ -72,12 +78,12 @@
 		<header class="article-info clearfix">
   <h1 itemprop="name">
     
-      <a href="/2010-09-01-lovely-bell/" title="很有爱的钟" itemprop="url">很有爱的钟</a>
+      <a href="/2014-09-08-wordpress_blank/" title="wordpress页面空白" itemprop="url">wordpress页面空白</a>
   </h1>
   <p class="article-author">By
       <a href="http://denglf.com/about" title="denglf" target="_blank">denglf</a>
   <p class="article-time">
-    <time datetime="2010-09-01T00:00:00.000Z" itemprop="datePublished">发表于9月 1 2010</time>
+    <time datetime="2014-09-08T15:55:15.000Z" itemprop="datePublished">发表于9月 8 2014</time>
     
   </p>
 </header>
@@ -91,28 +97,26 @@
 		
 		</div>
 		
-		<p>偶然发现了这张图片，很有爱的钟，具有代表性的式子，大家能认出几个呢？（图下附有解说）<br><a id="more"></a><br><img src="/images/2010-09-01-lovely-bell/medium.jpg" alt="很有爱的钟"></p>
-<p><span style="font-weight: bold; padding: 2px; border: 1px solid #999; cursor: pointer;" onclick="toggle('answer');">解说</span></p>
-<script type="text/JavaScript">
-    function toggle(sDivId) {
-    var oDiv = document.getElementById(sDivId);
-    oDiv.style.display = (oDiv.style.display == "none") ? "block":"none"; }
-</script>
-
-<ol id="answer" style="display: none;"><br>    <li>B′L ≈ 1.08366 勒让德常数。</li><br>    <li>极限1+1/2+1/4+1/8+&#8230;=2。</li><br>    <li>3的unicode编码。</li><br>    <li>描述的一个模逆元。如果a<em>b (mod m) = 1 (mod m)，那么b=a^(-1) (mod m)，2×4(mod 7) = 1 (mod 7)，所以结果是4。</em></li><br>    <li>φ是黄金分割数，φ=(√5+1)/2。</li><br>    <li>阶乘3!=32=6。</li><br>    <li>6.999999&#8230;，无限循环小数，趋近于7。</li><br>    <li>二进制数1000，转换十进制是8。</li><br>    <li>四进制数21，转换十进制是9。</li><br>    <li>C(5,2)=5*4/2=10。</li><br>    <li>十六进制0x0B，转换十进制是11。</li><br>    <li>这个就不用说了。。。</li><br></ol>
+		<p>升级了wordpress后页面经常空白，有点莫名其妙，后来找到了原因。</p>
+<p>原来是php的内存超过限制。</p>
+<p>解决方法如下：</p>
+<p>编辑<code>php.ini</code></p>
+<p><figure class="highlight"><pre><span class="attribute">memory_limit</span>=<span class="string">16M</span>
+</pre></figure><br>将这个值改大点，例如256M，重启Apache。</p>
+<p>然后刷新，页面终于出来了。</p>
   
 	</div>
 		<footer class="article-footer clearfix">
 
 <div class="article-categories">
   <span></span>
-  <a class="article-category-link" href="/categories/Math/">Math</a>
+  <a class="article-category-link" href="/categories/WordPress/">WordPress</a>
 </div>
 
 
   <div class="article-tags">
   
-  <span></span> <a href="/tags/clock/">clock</a><a href="/tags/math/">math</a>
+  <span></span> <a href="/tags/WordPress/">WordPress</a>
   </div>
 
 
@@ -120,7 +124,7 @@
 
 <div class="article-share" id="share">
 
-  <div data-url="http://denglf.com/2010-09-01-lovely-bell/" data-title="很有爱的钟 | denglf&#39;s Blog" data-tsina="1700030707" class="share clearfix">
+  <div data-url="http://denglf.com/2014-09-08-wordpress_blank/" data-title="wordpress页面空白 | denglf&#39;s Blog" data-tsina="1700030707" class="share clearfix">
   </div>
 
 </div>
@@ -129,19 +133,11 @@
 	
 <nav class="article-nav clearfix">
  
- <div class="prev" >
- <a href="/2014-02-19-git-global-update-email/" title="Git全局更新电子邮件">
-  <strong>上一篇：</strong><br/>
-  <span>
-  Git全局更新电子邮件</span>
-</a>
-</div>
-
 
 <div class="next">
-<a href="/2010-07-13-scarred-weekend/"  title="伤痕累累的周末">
+<a href="/2014-06-16-iphone-will-not-charge/"  title="IPhone无法充电">
  <strong>下一篇：</strong><br/> 
- <span>伤痕累累的周末
+ <span>IPhone无法充电
 </span>
 </a>
 </div>
@@ -151,7 +147,7 @@
 	
 <section class="comment">
 	<!-- 多说评论框 start -->
-    <div class="ds-thread" data-thread-key="2010-09-01-lovely-bell/" data-title="很有爱的钟"></div>
+    <div class="ds-thread" data-thread-key="2014-09-08-wordpress_blank/" data-title="wordpress页面空白"></div>
     <!-- 多说评论框 end -->
 </section>
 
