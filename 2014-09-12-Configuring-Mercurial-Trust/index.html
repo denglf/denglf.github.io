@@ -4,12 +4,17 @@
 <head>
   <meta charset="UTF-8">
   
-    <title>环形轨道加油站问题 | denglf&#39;s Blog</title>
+    <title>配置 Mercurial Trust | denglf&#39;s Blog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
     
     <meta name="author" content="denglf">
     
-    <meta name="description" content="今天在网上看到一个智力题，觉得很有意思，题目如下：">
+    <meta name="description" content="这是一篇翻译的文章，英文原文在此。
+为什么Mercurial会忽略你的配置文件，怎么处理？
+为什么Mercurial会忽略我的设置？
+如果你遇到了在服务器上配置Mercurial的hgrc文件无效的问题，那么你就找对地方了。
+如果你遇到过下面类似的错误信息，那么你真的找对地方了：
+Not trust">
     
     
     
@@ -72,12 +77,12 @@
 		<header class="article-info clearfix">
   <h1 itemprop="name">
     
-      <a href="/2010-01-08-circular-orbit-gas-station-problem/" title="环形轨道加油站问题" itemprop="url">环形轨道加油站问题</a>
+      <a href="/2014-09-12-Configuring-Mercurial-Trust/" title="配置 Mercurial Trust" itemprop="url">配置 Mercurial Trust</a>
   </h1>
   <p class="article-author">By
       <a href="http://denglf.com/about" title="denglf" target="_blank">denglf</a>
   <p class="article-time">
-    <time datetime="2010-01-08T00:00:00.000Z" itemprop="datePublished">发表于1月 8 2010</time>
+    <time datetime="2014-09-12T03:09:21.000Z" itemprop="datePublished">发表于9月 12 2014</time>
     
   </p>
 </header>
@@ -87,35 +92,101 @@
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">文章目录</strong>
 		
-			
+			<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么Mercurial会忽略我的设置？"><span class="toc-number">1.</span> <span class="toc-text">为什么Mercurial会忽略我的设置？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么这是一个安全问题？"><span class="toc-number">2.</span> <span class="toc-text">为什么这是一个安全问题？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#我是Alice！为什么我会看到这个？"><span class="toc-number">3.</span> <span class="toc-text">我是Alice！为什么我会看到这个？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#如果我认为Alice是值得信赖的？"><span class="toc-number">4.</span> <span class="toc-text">如果我认为Alice是值得信赖的？</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#怎么不解决它"><span class="toc-number">4.1.</span> <span class="toc-text">怎么不解决它</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何定义trust"><span class="toc-number">4.2.</span> <span class="toc-text">如何定义trust</span></a></li></ol><li class="toc-item toc-level-2"><a class="toc-link" href="#我依然很困惑，我的webserver的日志中记录了这个错误信息？"><span class="toc-number">5.</span> <span class="toc-text">我依然很困惑，我的webserver的日志中记录了这个错误信息？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#好了，如果使用SSH呢?"><span class="toc-number">6.</span> <span class="toc-text">好了，如果使用SSH呢?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#我可以配置一台服务器，这样用户将默认信任hooks？"><span class="toc-number">7.</span> <span class="toc-text">我可以配置一台服务器，这样用户将默认信任hooks？</span></a></li></ol>
 		
 		</div>
 		
-		<p>今天在网上看到一个智力题，觉得很有意思，题目如下：<br><a id="more"></a><br>一个环形轨道上有n个加油站，所有加油站的油量总和正好够车跑一圈。证明，总能找到其中一个加油站，使得初始时油箱为空的汽车从这里出发，能够顺利环行一圈回到起点。</p>
-<p>初看这个题，涉及到证明，二话不说，拿起笔就写公式。但写完发现，既然是一个环，画个坐标图分析不更容易。</p>
-<p>先假设加油站有4个，油量分别是5、2、1、3，两站之间的耗油量分别是3、5、2、1，上图先：</p>
-<p><img src="/images/2010-01-08-circular-orbit-gas-station-problem/map.png" alt="加油站分布图"></p>
-<p>假设从5开始开车，则汽车剩余油量依次分别为0、2、-1、-2，坐标图如下（横坐标代表汽车油量变化的步骤，曲线代表汽车油量的变化趋势）：</p>
-<p><img src="/images/2010-01-08-circular-orbit-gas-station-problem/oil.png" alt="油量变化图"></p>
-<p>上图显示汽车绕环跑3圈剩余油量的变化，从图中可以看出该曲线是周期函数的曲线。那么我们要保证汽车顺利跑完一圈，只要保证这个剩余油量函数的值横大于等于0。</p>
-<p>所以将曲线的最低点作为汽车的起点，而起点的油量是0，所有的剩余油量都会大于等于0 了，选择以步骤4为起始点到步骤12之间的曲线，曲线图变成：</p>
-<p><img src="/images/2010-01-08-circular-orbit-gas-station-problem/oil1.png" alt="油量变化曲线图"></p>
-<p>这样就能顺利跑完全程了，起点为3，剩余油量依次分别是0、2、4、1。</p>
-<p>不管这个曲线怎么构造，至少存在一个最低点使剩余油量大于等于0，所以总能找到其中一个加油站，使得初始时油箱为空的汽车从这里出发，能够顺利环行一圈回到起点。</p>
-<p>现在看到一些数学题和智力题我都先考虑能不能用图论的方式解决，数学本是源于大自然，图是最直观明了的。</p>
+		<p>这是一篇翻译的文章，英文原文<a href="http://mercurial.selenic.com/wiki/Trust" target="_blank" rel="external">在此</a>。</p>
+<p>为什么Mercurial会忽略你的配置文件，怎么处理？</p>
+<h2 id="为什么Mercurial会忽略我的设置？">为什么Mercurial会忽略我的设置？</h2>
+<p>如果你遇到了在服务器上配置Mercurial的hgrc文件无效的问题，那么你就找对地方了。</p>
+<p>如果你遇到过下面类似的错误信息，那么你真的找对地方了：</p>
+<figure class="highlight"><pre><span class="keyword">Not</span> trusting file /home/alice/repo/.hg/hgrc <span class="keyword">from</span> untrusted user alice, <span class="keyword">group</span> users
+</pre></figure>
+
+<p>由于安全的因素, Mercurial只信任运行Mercurial的用户的hgrc文件。未被信任的hgrc文件的设置会被忽略。</p>
+<h2 id="为什么这是一个安全问题？">为什么这是一个安全问题？</h2>
+<p>想象一下以下情形：</p>
+<ul>
+<li>Alice的仓库地址是<code>/repos/alice/project</code>。</li>
+<li>里面包含属于Alice权限的文件<code>.hg/hgrc</code>。</li>
+<li>Bob使用<code>hg log</code>查看仓库的提交记录。</li>
+</ul>
+<p>如果Bob的hg命令信任Alice的<code>.hg/hgrc</code>，那么它可以偷偷的加载和运行任何Alice配置好的的hooks和扩展程序。如果Alice是恶意的，她建立了一个hook去访问Bob的帐号，读他的邮件，个人文件等。</p>
+<p>相反，Mercurial会忽略这些设置，这意味着Alice已经启用的hooks和扩展程序（无论是否恶意）将被忽略。</p>
+<h2 id="我是Alice！为什么我会看到这个？">我是Alice！为什么我会看到这个？</h2>
+<p>你确实由于某些原因需要使用不同的用户运行Mercurial。在类Unix系统的id命令在这或许会有帮助。</p>
+<h2 id="如果我认为Alice是值得信赖的？">如果我认为Alice是值得信赖的？</h2>
+<h3 id="怎么不解决它">怎么不解决它</h3>
+<p>出于某种原因，用户总是试图通过在Alice的hgrc中配置信任（trusts）Bob来解决这个问题。这并没有效果：问题是，鲍勃不信任Alice，所以Alice无论怎么修改她的配置文件都没有用。你要明确的知道如何选择信任的方式！</p>
+<h3 id="如何定义trust">如何定义trust</h3>
+<p>用户可以在他们的<code>$HOME/.hgrc</code>文件中添加配置来告诉Mercurial信任其他用户。例如，如果Bob在看Alice的仓库的时候确定他可以信任她不会试图删除自己的文件时，他可以在配置文件中加：</p>
+<figure class="highlight"><pre><span class="title">[trusted]</span>
+<span class="setting">users = <span class="value">alice, carl, dan</span></span>
+</pre></figure>
+
+<p>同样，Bob也可以信任一个用户组（指操作系统的用户组）。</p>
+<figure class="highlight"><pre><span class="title">[trusted]</span>
+<span class="setting">groups = <span class="value">dev-team</span></span>
+</pre></figure>
+
+<p><strong>Bob除非确定信任Alice，否则不应该设这个!</strong></p>
+<p>更多相关信息在<a href="http://www.selenic.com/mercurial/hgrc.5.html#trusted" target="_blank" rel="external">hgrc manpage</a>.</p>
+<h2 id="我依然很困惑，我的webserver的日志中记录了这个错误信息？">我依然很困惑，我的webserver的日志中记录了这个错误信息？</h2>
+<p>在这种情况下，用户运行的Apache服务器（如apache，daemon，nobody或者www-data）是我们的例子中的Bob，拥有的仓库是Alice。换句话说， Web服务器的用户不信任仓库拥有者。</p>
+<p>一旦你理解上面的安全问题，有几种方式解决这个：</p>
+<ul>
+<li>忽略它 - hooks和扩展不需要执行。</li>
+<li>添加信任设置在web服务器的用户的主目录的.hgrc文件中。</li>
+<li>改变由web服务器所拥有的仓库（请注意，设置组和设置所有者是不同的）。</li>
+<li>在<code>/etc/mercurial/</code>中添加一个全局性的trusted设置（前提是你相信每个人！ ）。</li>
+</ul>
+<h2 id="好了，如果使用SSH呢?">好了，如果使用SSH呢?</h2>
+<p>当你在push或pull的时候获得下面的错误信息：</p>
+<figure class="highlight"><pre>bob$ hg pull ssh://bob@serve<span class="comment">r//repos/alice/test</span>
+destination <span class="built_in">directory</span>: test
+remote: Not trusting <span class="built_in">file</span> test/.hg/hgrc <span class="built_in">from</span> untrusted user alice,
+group users
+remote: Not trusting <span class="built_in">file</span> /repos/alice/test/.hg/hgrc <span class="built_in">from</span> untrusted
+user alice, group users
+adding changesets
+adding manifests
+adding <span class="built_in">file</span> changes
+added <span class="number">2</span> changesets <span class="operator">with</span> <span class="number">3</span> changes <span class="built_in">to</span> <span class="number">2</span> <span class="built_in">files</span>
+updating <span class="built_in">to</span> branch default
+<span class="number">2</span> <span class="built_in">files</span> updated, <span class="number">0</span> <span class="built_in">files</span> merged, <span class="number">0</span> <span class="built_in">files</span> removed, <span class="number">0</span> <span class="built_in">files</span> unresolved
+</pre></figure>
+
+<p>remote的前缀表示错误信息是从远程服务器来的。因此，关于用户和权限的的错误信息和trusted设置在远程服务器上。Bob的本地的hgrc设置不起作用。为了解决这个问题，他需要ssh到远程计算机，并在他的<code>.hgrc</code>文件中添加适当的设置。</p>
+<h2 id="我可以配置一台服务器，这样用户将默认信任hooks？">我可以配置一台服务器，这样用户将默认信任hooks？</h2>
+<p>考虑一个中央仓库的常见情况。您作为服务器管理员，需要根据上传的patches在服务器上运行一些hooks。您有几种选择：</p>
+<ul>
+<li>只提供<code>web/http</code>的仓库入口（而不是SSH ）。见上面的关于网络服务器日志的部分。</li>
+<li>做一个共享的ssh帐号，是hgrc的所有者 ，并要求用户使用该帐户来push。</li>
+<li><p>添加</p>
+  <figure class="highlight"><pre><span class="title">[trusted]</span>
+<span class="setting">users = <span class="value">root</span></span>
+</pre></figure>
+
+<p>  到<code>/etc/mercurial/hgrc</code>，然后将仓库hgrc的所有者改为root。</p>
+</li>
+</ul>
+<p>如果你已经运行了一个webserver，那么使用第一种方式很好。但是如果你的用户已经有自己的SSH账户，那就会有更多的开销（你需要在Web服务器上创建重复的账户，维护更多的服务）。</p>
+<p>第二种方式（共享SSH账户）可能被视为低安全性，因为这将是很难限制用户访问，属性的使用和共享密码很难保密。</p>
+<p>第三种方式提供了使用配置机器上的所有用户的默认设置为信任“root”的方法更安全的ssh访问。Mercurial不直接信任的root的hgrc文件…Mercurial会’信任’全局的<code>/etc/mercurial/hgrc</code>文件（通常要被锁定为root ），这样，你必须明确地声明，用户应该信任root所有的hgrc文件。（这可以由用户的<code>$HOME/.hgrc</code>覆盖，除去root的trusted，从而忽略hooks执行？ ）</p>
   
 	</div>
 		<footer class="article-footer clearfix">
 
 <div class="article-categories">
   <span></span>
-  <a class="article-category-link" href="/categories/DataStruct/">DataStruct</a>
+  <a class="article-category-link" href="/categories/Mercurial/">Mercurial</a>
 </div>
 
 
   <div class="article-tags">
   
-  <span></span> <a href="/tags/图论/">图论</a><a href="/tags/算法/">算法</a>
+  <span></span> <a href="/tags/Mercurial/">Mercurial</a>
   </div>
 
 
@@ -123,7 +194,7 @@
 
 <div class="article-share" id="share">
 
-  <div data-url="http://denglf.com/2010-01-08-circular-orbit-gas-station-problem/" data-title="环形轨道加油站问题 | denglf&#39;s Blog" data-tsina="1700030707" class="share clearfix">
+  <div data-url="http://denglf.com/2014-09-12-Configuring-Mercurial-Trust/" data-title="配置 Mercurial Trust | denglf&#39;s Blog" data-tsina="1700030707" class="share clearfix">
   </div>
 
 </div>
@@ -132,19 +203,11 @@
 	
 <nav class="article-nav clearfix">
  
- <div class="prev" >
- <a href="/2010-01-14-xingyue-myth/" title="山有木兮木有枝，心悦君兮君不知">
-  <strong>上一篇：</strong><br/>
-  <span>
-  山有木兮木有枝，心悦君兮君不知</span>
-</a>
-</div>
-
 
 <div class="next">
-<a href="/2010-01-06-about-memory-leaks/"  title="关于内存泄漏">
+<a href="/2014-09-08-wordpress_blank/"  title="wordpress页面空白">
  <strong>下一篇：</strong><br/> 
- <span>关于内存泄漏
+ <span>wordpress页面空白
 </span>
 </a>
 </div>
@@ -154,7 +217,7 @@
 	
 <section class="comment">
 	<!-- 多说评论框 start -->
-    <div class="ds-thread" data-thread-key="2010-01-08-circular-orbit-gas-station-problem/" data-title="环形轨道加油站问题"></div>
+    <div class="ds-thread" data-thread-key="2014-09-12-Configuring-Mercurial-Trust/" data-title="配置 Mercurial Trust"></div>
     <!-- 多说评论框 end -->
 </section>
 
@@ -165,7 +228,7 @@
   <div id="toc" class="toc-aside">
   <strong class="toc-title">文章目录</strong>
  
- 
+ <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么Mercurial会忽略我的设置？"><span class="toc-number">1.</span> <span class="toc-text">为什么Mercurial会忽略我的设置？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么这是一个安全问题？"><span class="toc-number">2.</span> <span class="toc-text">为什么这是一个安全问题？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#我是Alice！为什么我会看到这个？"><span class="toc-number">3.</span> <span class="toc-text">我是Alice！为什么我会看到这个？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#如果我认为Alice是值得信赖的？"><span class="toc-number">4.</span> <span class="toc-text">如果我认为Alice是值得信赖的？</span></a></li><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#怎么不解决它"><span class="toc-number">4.1.</span> <span class="toc-text">怎么不解决它</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何定义trust"><span class="toc-number">4.2.</span> <span class="toc-text">如何定义trust</span></a></li></ol><li class="toc-item toc-level-2"><a class="toc-link" href="#我依然很困惑，我的webserver的日志中记录了这个错误信息？"><span class="toc-number">5.</span> <span class="toc-text">我依然很困惑，我的webserver的日志中记录了这个错误信息？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#好了，如果使用SSH呢?"><span class="toc-number">6.</span> <span class="toc-text">好了，如果使用SSH呢?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#我可以配置一台服务器，这样用户将默认信任hooks？"><span class="toc-number">7.</span> <span class="toc-text">我可以配置一台服务器，这样用户将默认信任hooks？</span></a></li></ol>
  
   </div>
 
